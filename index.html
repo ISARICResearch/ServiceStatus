@@ -1,43 +1,351 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="60">
-  <title>ISARIC Service Status</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ISARIC Research | Clinical Epidemiology & Analysis Platform | Service Status</title>
   <style>
-    body { font-family: sans-serif; max-width: 600px; margin: 60px auto; background: #f9f9f9; }
-    h1   { font-size: 1.4rem; color: #333; }
-    .service { display:flex; align-items:center; padding: 14px 0; border-bottom: 1px solid #eee; }
-    .light { width:22px; height:22px; border-radius:50%; margin-right:16px; flex-shrink:0; }
-    .green  { background:#2ea44f; box-shadow:0 0 8px #2ea44f88; }
-    .amber  { background:#f0a500; box-shadow:0 0 8px #f0a50088; }
-    .red    { background:#d73a49; box-shadow:0 0 8px #d73a4988; }
-    .unknown{ background:#aaa; }
-    .name { font-weight:600; flex:1; }
-    .label { font-size:0.85rem; color:#666; }
-    footer { margin-top:20px; font-size:0.75rem; color:#aaa; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   "Helvetica Neue", Arial, sans-serif;
+      background: #f8f9fb;
+      color: black;
+      font-size: 15px;
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid #eeebee;
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+    }
+
+    .header-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: black;
+      letter-spacing: 0.01em;
+    }
+
+    .header-title .accent { color: #2962ff; }
+    .header-title .divider { color: #9ca3af; font-weight: 300; margin: 0 6px; }
+
+    .container {
+      max-width: 900px;
+      width: 100%;
+      margin: 40px auto;
+      padding: 0 24px;
+      flex: 1;
+    }
+
+    .overall-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 22px;
+      border-radius: 6px;
+      margin-bottom: 28px;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .overall-banner.up      { background: #f0fdf4; border: 1px solid #86efac; color: #15803d; }
+    .overall-banner.down    { background: #fff5f5; border: 1px solid #fca5a5; color: #b91c1c; }
+    .overall-banner.unknown { background: #f8f9fb; border: 1px solid #eeebee; color: #5a5c63; }
+
+    .overall-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+    .up   .overall-dot { background: #22c55e; box-shadow: 0 0 6px #22c55e88; }
+    .down .overall-dot { background: #ef4444; box-shadow: 0 0 6px #ef444488; }
+    .unknown .overall-dot { background: #9ca3af; }
+
+    .overall-meta { margin-left: auto; font-size: 0.78rem; font-weight: 400; color: #646776; }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid #eeebee;
+      border-radius: 6px;
+      padding: 28px 32px;
+      margin-bottom: 20px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .card-header h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: #646776;
+    }
+
+    .legend { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 7px; font-size: 0.80rem; color: #646776; }
+    .legend-pip { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+    .legend-pip.green { background: #22c55e; }
+    .legend-pip.red   { background: #ef4444; }
+    .legend-pip.amber { background: #f59e0b; }
+
+    .service-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .service-tile {
+      border: 1px solid #eeebee;
+      border-radius: 8px;
+      padding: 20px 20px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      transition: box-shadow 0.15s;
+    }
+
+    .service-tile:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+    .service-tile.up      { border-left: 4px solid #22c55e; }
+    .service-tile.down    { border-left: 4px solid #ef4444; }
+    .service-tile.unknown { border-left: 4px solid #f59e0b; }
+
+    .service-tile-header { display: flex; align-items: center; gap: 10px; width: 100%; }
+
+    .status-pip { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+    .service-tile.up      .status-pip { background: #22c55e; box-shadow: 0 0 5px #22c55e66; }
+    .service-tile.down    .status-pip { background: #ef4444; box-shadow: 0 0 5px #ef444466; }
+    .service-tile.unknown .status-pip { background: #f59e0b; box-shadow: 0 0 5px #f59e0b66; }
+
+    .service-name a {
+      font-size: 0.97rem;
+      font-weight: 700;
+      color: #2962ff;
+      text-decoration: none;
+      letter-spacing: 0.04em;
+    }
+    .service-name a:hover { text-decoration: underline; }
+
+    .service-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+    .badge-up      { background: #f0fdf4; color: #15803d; border: 1px solid #86efac; }
+    .badge-down    { background: #fff5f5; color: #b91c1c; border: 1px solid #fca5a5; }
+    .badge-unknown { background: #fffbeb; color: #92400e; border: 1px solid #fcd34d; }
+
+    .service-meta { font-size: 0.78rem; color: #9ca3af; }
+
+    .history-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .history-table th {
+      text-align: left; padding: 9px 12px;
+      font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.07em;
+      color: #646776; border-bottom: 1px solid #eeebee;
+    }
+    .history-table td { padding: 9px 12px; border-bottom: 1px solid #f8f9fb; color: #5a5c63; }
+    .history-table tr:last-child td { border-bottom: none; }
+
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 0.76rem; font-weight: 600; }
+    .badge.up   { background: #f0fdf4; color: #15803d; border: 1px solid #86efac; }
+    .badge.down { background: #fff5f5; color: #b91c1c; border: 1px solid #fca5a5; }
+
+    .refresh-note { text-align: center; font-size: 0.78rem; color: #646776; margin-top: 6px; margin-bottom: 40px; }
+
+    footer {
+      border-top: 1px solid #eeebee;
+      background: #ffffff;
+      padding: 18px 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    footer a {
+      color: #646776;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.80rem;
+      transition: color 0.15s;
+    }
+    footer a:hover { color: #2962ff; }
+    footer svg { width: 22px; height: 22px; }
   </style>
 </head>
 <body>
-  <h1>ISARIC Service Status</h1>
-  <div id="services">Loading...</div>
-  <footer id="updated"></footer>
-  <script>
-    const labels = { green:"Operational", amber:"Degraded", red:"Down", unknown:"Unknown" };
-    fetch("status.json?t=" + Date.now())
-      .then(r => r.json())
-      .then(data => {
-        document.getElementById("updated").textContent =
-          "Last checked: " + new Date(data.updated).toLocaleString();
-        document.getElementById("services").innerHTML =
-          data.services.map(s => `
-            <div class="service">
-              <div class="light ${s.status}"></div>
-              <span class="name">${s.name}</span>
-              <span class="label">${labels[s.status] || s.status}</span>
-            </div>`).join("");
-      });
-  </script>
+
+<header>
+  <div class="header-title">
+    ISARIC Research
+    <span class="divider">|</span>
+    <span class="accent">Clinical Epidemiology &amp; Analysis Platform </span>
+    <span class="divider">|</span>
+    Service Status
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="overall-banner unknown" id="overall-banner">
+    <div class="overall-dot"></div>
+    <span id="overall-label">Loading&#x2026;</span>
+    <span class="overall-meta" id="last-checked"></span>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Services</h2>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-pip green"></div> Operational</div>
+        <div class="legend-item"><div class="legend-pip red"></div> Disruption</div>
+        <div class="legend-item"><div class="legend-pip amber"></div> Unknown</div>
+      </div>
+    </div>
+    <div class="service-grid" id="service-grid">
+      <p style="color:#646776;">Loading services&#x2026;</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-bottom:16px;">Recent History</h2>
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Status</th>
+          <th>HTTP Code</th>
+          <th>Response Time</th>
+        </tr>
+      </thead>
+      <tbody id="history-body">
+        <tr><td colspan="4" style="color:#646776;">Loading history&#x2026;</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="refresh-note" id="refresh-note">Refreshing in 30 seconds&#x2026;</p>
+
+</div>
+
+<footer>
+  <a href="https://docs.isaric.org" target="_blank" rel="noopener noreferrer">
+    <svg viewBox="0 0 16 16" fill="currentColor" aria-label="docs.isaric.org">
+      <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+        0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01
+        1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95
+        0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68
+        0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15
+        0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38
+        A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+    </svg>
+    docs.isaric.org
+  </a>
+</footer>
+
+<script>
+  const STATUS_URL = "status.json";
+  const REFRESH_INTERVAL = 30;
+
+  const SERVICE_URLS = {
+    "bridge": "https://bridge.isaric.org",
+    "vertex": "https://vertex.isaric.org",
+    "link":   "https://link.isaric.org"
+  };
+
+  function formatTime(isoString) {
+    if (!isoString) return "-";
+    const d = new Date(isoString);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+      + " " + d.toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" });
+  }
+
+  function renderServices(services) {
+    const grid = document.getElementById("service-grid");
+    if (!services || services.length === 0) {
+      grid.innerHTML = '<p style="color:#646776;">No service data available.</p>';
+      return;
+    }
+    grid.innerHTML = services.map(svc => {
+      const state      = svc.status === "up" ? "up" : svc.status === "down" ? "down" : "unknown";
+      const badgeClass = state === "up" ? "badge-up" : state === "down" ? "badge-down" : "badge-unknown";
+      const badgeLabel = state === "up" ? "Operational" : state === "down" ? "Disruption" : "Unknown";
+      const meta       = svc.status_code ? "HTTP " + svc.status_code : (svc.error ? svc.error : "");
+      const nameUpper  = svc.name.toUpperCase();
+      const url        = SERVICE_URLS[svc.name.toLowerCase()] || svc.url || "#";
+      return [
+        '<div class="service-tile ' + state + '">',
+          '<div class="service-tile-header">',
+            '<div class="status-pip"></div>',
+            '<div class="service-name">',
+              '<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + nameUpper + '</a>',
+            '</div>',
+          '</div>',
+          '<span class="service-badge ' + badgeClass + '">' + badgeLabel + '</span>',
+          '<div class="service-meta">' + meta + '</div>',
+        '</div>'
+      ].join("");
+    }).join("");
+  }
+
+  function renderOverall(status, checkedAt) {
+    const banner = document.getElementById("overall-banner");
+    const label  = document.getElementById("overall-label");
+    const meta   = document.getElementById("last-checked");
+    banner.className  = "overall-banner " + (status === "up" ? "up" : status === "down" ? "down" : "unknown");
+    label.textContent = status === "up" ? "All Systems Operational" : status === "down" ? "Disruption Detected" : "Status Unknown";
+    meta.textContent  = checkedAt ? "Last checked: " + formatTime(checkedAt) : "";
+  }
+
+  async function fetchStatus() {
+    try {
+      const res  = await fetch(STATUS_URL, { cache: "no-store" });
+      const data = await res.json();
+      renderOverall(data.status, data.checked_at);
+      renderServices(data.services);
+      const history = data.history || [];
+      const tbody = document.getElementById("history-body");
+      if (history.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="color:#646776;">No history available yet.</td></tr>';
+      } else {
+        tbody.innerHTML = history.slice().reverse().map(function(h) {
+          return [
+            '<tr>',
+              '<td>' + formatTime(h.checked_at) + '</td>',
+              '<td><span class="badge ' + h.status + '">' + (h.status === "up" ? "Operational" : "Down") + '</span></td>',
+              '<td>' + (h.http_status_code != null ? h.http_status_code : "-") + '</td>',
+              '<td>' + (h.response_time_ms != null ? h.response_time_ms + " ms" : "-") + '</td>',
+            '</tr>'
+          ].join("");
+        }).join("");
+      }
+    } catch (e) {
+      renderOverall("unknown", null);
+      document.getElementById("service-grid").innerHTML = '<p style="color:#646776;">Unable to load service data.</p>';
+    }
+  }
+
+  var countdown = REFRESH_INTERVAL;
+  setInterval(function() {
+    countdown--;
+    if (countdown <= 0) { countdown = REFRESH_INTERVAL; fetchStatus(); }
+    document.getElementById("refresh-note").textContent = "Refreshing in " + countdown + " seconds\u2026";
+  }, 1000);
+
+  fetchStatus();
+</script>
+
 </body>
 </html>
-
