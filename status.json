@@ -1,0 +1,21 @@
+{
+  "updated": "2026-10-30T15:42:00Z",
+  "services": [
+    {
+      "name": "BRIDGE",
+      "status": "operational",
+      "health_check_id": "PLACEHOLDER"
+    },
+    {
+      "name": "VERTEX",
+      "status": "operational",
+      "health_check_id": "PLACEHOLDER"
+    },
+    {
+      "name": "LINK",
+      "status": "operational",
+      "health_check_id": "PLACEHOLDER"
+    }
+  ]
+}
+

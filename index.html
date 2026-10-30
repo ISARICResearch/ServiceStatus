@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="60">
+  <title>ISARIC Service Status</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 60px auto; background: #f9f9f9; }
+    h1   { font-size: 1.4rem; color: #333; }
+    .service { display:flex; align-items:center; padding: 14px 0; border-bottom: 1px solid #eee; }
+    .light { width:22px; height:22px; border-radius:50%; margin-right:16px; flex-shrink:0; }
+    .green  { background:#2ea44f; box-shadow:0 0 8px #2ea44f88; }
+    .amber  { background:#f0a500; box-shadow:0 0 8px #f0a50088; }
+    .red    { background:#d73a49; box-shadow:0 0 8px #d73a4988; }
+    .unknown{ background:#aaa; }
+    .name { font-weight:600; flex:1; }
+    .label { font-size:0.85rem; color:#666; }
+    footer { margin-top:20px; font-size:0.75rem; color:#aaa; }
+  </style>
+</head>
+<body>
+  <h1>ISARIC Service Status</h1>
+  <div id="services">Loading...</div>
+  <footer id="updated"></footer>
+  <script>
+    const labels = { green:"Operational", amber:"Degraded", red:"Down", unknown:"Unknown" };
+    fetch("status.json?t=" + Date.now())
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById("updated").textContent =
+          "Last checked: " + new Date(data.updated).toLocaleString();
+        document.getElementById("services").innerHTML =
+          data.services.map(s => `
+            <div class="service">
+              <div class="light ${s.status}"></div>
+              <span class="name">${s.name}</span>
+              <span class="label">${labels[s.status] || s.status}</span>
+            </div>`).join("");
+      });
+  </script>
+</body>
+</html>
+
