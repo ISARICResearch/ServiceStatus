@@ -10,9 +10,22 @@ ENDPOINTS = [
     {"name": "Link",   "url": "https://link.isaric.org"},
 ]
 
-S3_BUCKET       = "isaric-status-891612573996-eu-west-2-an"
-S3_KEY          = "status.json"
-CF_DISTRIBUTION = "E2CCNNA94LH9KT"
+S3_BUCKET = "isaric-status-891612573996-eu-west-2-an"
+S3_KEY    = "status.json"
+
+
+def sanitise_error(msg: str) -> str:
+    """Return a safe, generic error category — never raw exception detail."""
+    m = msg.lower()
+    if "timeout" in m:
+        return "timeout"
+    if "ssl" in m or "certificate" in m:
+        return "ssl error"
+    if "connection" in m:
+        return "connection error"
+    if "http" in m:
+        return "http error"
+    return "unreachable"
 
 
 def check_endpoint(name, url):
@@ -34,7 +47,7 @@ def check_endpoint(name, url):
             "url":         url,
             "status":      "degraded",
             "status_code": e.code,
-            "error":       str(e.reason),
+            "error":       sanitise_error(str(e.reason)),
         }
     except Exception as e:
         return {
@@ -42,32 +55,46 @@ def check_endpoint(name, url):
             "url":         url,
             "status":      "down",
             "status_code": None,
-            "error":       str(e),
+            "error":       sanitise_error(str(e)),
         }
 
 
 def lambda_handler(event, context):
-    results = [check_endpoint(ep["name"], ep["url"]) for ep in ENDPOINTS]
+    results = []
+    for ep in ENDPOINTS:
+        try:
+            result = check_endpoint(ep["name"], ep["url"])
+        except Exception:
+            # Broad catch — one failing check must never prevent the S3 write
+            result = {
+                "name":        ep["name"],
+                "url":         ep["url"],
+                "status":      "down",
+                "status_code": None,
+                "error":       "unreachable",
+            }
+        results.append(result)
+
     for r in results:
         print(json.dumps(r))
 
     overall = "up"
-    if any(r["status"] == "down"     for r in results): overall = "down"
+    if any(r["status"] == "down"      for r in results): overall = "down"
     elif any(r["status"] == "degraded" for r in results): overall = "degraded"
 
     payload = {
-        "status":    overall,
+        "status":     overall,
         "checked_at": datetime.now(timezone.utc).isoformat(),
         "services":   results,
     }
 
     s3 = boto3.client("s3")
     s3.put_object(
-        Bucket       = S3_BUCKET,
-        Key          = S3_KEY,
-        Body         = json.dumps(payload, indent=2),
-        ContentType  = "application/json",
-        CacheControl = "no-cache, no-store, must-revalidate",
+        Bucket      = S3_BUCKET,
+        Key         = S3_KEY,
+        Body        = json.dumps(payload, indent=2),
+        ContentType = "application/json",
+        CacheControl= "no-cache, no-store, must-revalidate",
     )
 
     return {"statusCode": 200, "body": json.dumps(payload)}
