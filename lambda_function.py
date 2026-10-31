@@ -1,21 +1,29 @@
+# -- IMPORTS --
+
+# -- Standard libraries --
 import json
-import urllib.request
-import urllib.error
-import boto3
+import os
+import typing
 from datetime import datetime, timezone
 
+# -- 3rd party libraries --
+import boto3
+import urllib.request
+import urllib.error
+
+
 ENDPOINTS = [
-    {"name": "Bridge", "url": "https://bridge.isaric.org"},
-    {"name": "Vertex", "url": "https://vertex.isaric.org"},
-    {"name": "Link",   "url": "https://link.isaric.org"},
+    {"name": "BRIDGE", "url": "https://bridge.isaric.org"},
+    {"name": "VERTEX", "url": "https://vertex.isaric.org"},
+    {"name": "LINK",   "url": "https://link.isaric.org"},
 ]
 
-S3_BUCKET = "isaric-status-891612573996-eu-west-2-an"
-S3_KEY    = "status.json"
+S3_BUCKET = os.environ.get("S3_BUCKET")
+S3_KEY    = os.environ.get("S3_KEY")
 
 
 def sanitise_error(msg: str) -> str:
-    """Return a safe, generic error category — never raw exception detail."""
+    """Genericise any potentially sensitive internal details from error messages."""
     m = msg.lower()
     if "timeout" in m:
         return "timeout"
@@ -28,7 +36,8 @@ def sanitise_error(msg: str) -> str:
     return "unreachable"
 
 
-def check_endpoint(name, url):
+def check_endpoint(name, url) -> dict[str, typing.Any]:
+    """Check endpoint health by name and URL."""
     try:
         req = urllib.request.Request(url, method="GET")
         with urllib.request.urlopen(req, timeout=10) as resp:
@@ -59,7 +68,8 @@ def check_endpoint(name, url):
         }
 
 
-def lambda_handler(event, context):
+def lambda_handler(event, context) -> dict[str, typing.Any]:
+    """The Lambda handler - checks and appends each endpoint's health status to a JSON file that it then uploads to S3."""
     results = []
     for ep in ENDPOINTS:
         try:
